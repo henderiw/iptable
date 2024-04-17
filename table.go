@@ -1,4 +1,4 @@
-package table
+package iptable
 
 import (
 	"errors"
