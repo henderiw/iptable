@@ -21,6 +21,7 @@ type IPTable[T1 any] interface {
 	UpdateIndex(index int, data T1) error
 	ReleaseIndex(index int) error
 	ClaimRandomIP(data T1) (string, error)
+	IsFree(addr string) bool
 }
 
 func NewIPTable[T1 any](from, to netip.Addr) IPTable[T1] {
@@ -85,6 +86,20 @@ func (r *ipTable[T1]) ClaimIP(addr string, data T1) error {
 	}
 	r.claimIndex(index, data)
 	return nil
+}
+
+func (r *ipTable[T1]) IsFree(addr string) bool {
+	r.m.Lock()
+	defer r.m.Unlock()
+	// Validate IP address
+	claimIP, err := r.validateIP(addr)
+	if err != nil {
+		return false
+	}
+	// Calculate the index in the bitmap
+	index := calculateIndex(claimIP, r.ipRange.From())
+
+	return r.isFree(index)
 }
 
 func (r *ipTable[T1]) UpdateIP(addr string, data T1) error {
